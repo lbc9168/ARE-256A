@@ -1,12 +1,13 @@
 **Question 2
 import excel "Total", firstrow
+gen risk_free = IRX/90
 
-gen APPL_Y = APPL_r - IRX_r
-gen GOOG_Y = GOOG_r - IRX_r
-gen PEP_Y = PEP_r - IRX_r
-gen GIS_Y = GIS_r - IRX_r
+gen APPL_Y = APPL_r - risk_free
+gen GOOG_Y = GOOG_r - risk_free
+gen PEP_Y = PEP_r - risk_free
+gen GIS_Y = GIS_r - risk_free
 
-gen GSPC_X = GSPC_r - IRX_r
+gen GSPC_X = GSPC_r - risk_free
 
 regress APPL_Y GSPC_X
 regress GOOG_Y GSPC_X
@@ -16,6 +17,7 @@ regress GIS_Y GSPC_X
 ***Draw graphs
 tsset Date
 tsline GOOG_Y
+
 graph twoway (scatter GOOG_Y GSPC_X)(lfit GOOG_Y GSPC_X)
 
 regress GOOG_Y GSPC_X
@@ -30,18 +32,21 @@ gen month = month(Date)
 gen DUMJ = 0
 replace DUMJ = 1 if month == 1
 regress AdjClose DUMJ
+clear
 
 import excel "XON_monthly", firstrow
 gen month = month(Date)
 gen DUMJ = 0
 replace DUMJ = 1 if month == 1
 regress AdjClose DUMJ
+clear
 
 import excel "PEP_monthly", firstrow
 gen month = month(Date)
 gen DUMJ = 0
 replace DUMJ = 1 if month == 1
 regress AdjClose DUMJ
+clear
 
 ***Question d under CAPM framework
 import excel "GOOG_monthly", firstrow
@@ -94,7 +99,7 @@ drop _merge
 
 drop if year(Date)<1970
 
-gen risk_free = IRX_AdjClose-IRX_AdjClose[_n-1]
+gen risk_free = IRX_AdjClose/90
 gen market_return = (GSPC_AdjClose-GSPC_AdjClose[_n-1])/(GSPC_AdjClose[_n-1])
 
 gen GOOG_return = (GOOG_AdjClose-GOOG_AdjClose[_n-1])/(GOOG_AdjClose[_n-1])
@@ -123,10 +128,211 @@ import excel "VLKAY", firstrow
 gen N_date = dofd(Date)
 twoway(line Close Date, xline(20349)) if inrange(Date, 20257, 20363)
 
+*mean return
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' VLKAY_`i'
+	}
+
+save VLKAY, replace
+clear
+
+import excel "GSPC", firstrow
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' GSPC_`i'
+	}
+
+merge 1:1 Date using VLKAY
+drop _merge
+
+gen market_return = (GSPC_Close - GSPC_Close[_n-1])/(GSPC_Close[_n-1])
+gen vw_return = (VLKAY_Close - VLKAY_Close[_n-1])/(VLKAY_Close[_n-1])
+gen event = 0
+replace event = 1 if Date == 20349
+
+reg vw_return if inrange(Date, 20254, 20346)
+predict abnormal_returns1, residuals
+
+*abnormal returns during the event window
+twoway(line abnormal_returns1 Date) if inrange(Date, 20349, 20356)
+
+egen CAR_1 = total(abnormal_returns1) if inrange(Date, 20349, 20356)
+twoway(line CAR_1 Date) if inrange(Date, 20349, 20356) 
+list CAR_1 if inrange(Date, 20349, 20356)
+
+sum abnormal_returns1 if inrange(Date, 20349, 20356)
+
+***question b
+
+*market model
+reg vw_return market_return if inrange(Date, 20254, 20346)
+predict abnormal_returns2, residuals
+twoway(line abnormal_returns2 Date, xline(20349)) if inrange(Date, 20349, 20356)
+
+egen CAR_2 = total(abnormal_returns2) if inrange(Date, 20349, 20356)
+twoway(line CAR_2 Date) if inrange(Date, 20349, 20356)
+list CAR_2 if inrange(Date, 20349, 20356)
+
+sum abnormal_returns2 if inrange(Date, 20349, 20356)
+
+
+***question c 
+reg vw_return market_return if inrange(Date, 20542, 20632)
+predict abnormal_returns3, residuals
+twoway(line abnormal_returns3 Date, xline(20633)) if inrange(Date, 20633, 20640)
+
+egen CAR_3 = total(abnormal_returns3) if inrange(Date, 20633, 20640)
+twoway(line CAR_3 Date) if inrange(Date, 20633, 20640)
+list CAR_3 if inrange(Date, 20633, 20640)
+
+sum abnormal_returns2 if inrange(Date, 20633, 20640)
+
+
+***question d
+clear
+*GM
+*data prepare
+import excel "GM", firstrow
+
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' GM_`i'
+	}
+
+save GM, replace
+clear
+
+import excel "GSPC", firstrow
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' GSPC_`i'
+	}
+
+merge 1:1 Date using GM
+drop _merge
+
+gen market_return = (GSPC_Close - GSPC_Close[_n-1])/(GSPC_Close[_n-1])
+gen gm_return = (GM_Close - GM_Close[_n-1])/(GM_Close[_n-1])
+
+*market model
+reg gm_return market_return if inrange(Date, 20254, 20346)
+predict abnormal_returns2, residuals
+twoway(line abnormal_returns2 Date, xline(20349)) if inrange(Date, 20349, 20356)
+
+egen CAR_2 = total(abnormal_returns2) if inrange(Date, 20349, 20356)
+twoway(line CAR_2 Date) if inrange(Date, 20349, 20356)
+list CAR_2 if inrange(Date, 20349, 20356)
+
+sum abnormal_returns2 if inrange(Date, 20349, 20356)
+
+*FORD
+*data prepare
+clear
+import excel "FORD", firstrow
+
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' FORD_`i'
+	}
+
+save FORD, replace
+clear
+
+import excel "GSPC", firstrow
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' GSPC_`i'
+	}
+
+merge 1:1 Date using FORD
+drop _merge
+
+gen market_return = (GSPC_Close - GSPC_Close[_n-1])/(GSPC_Close[_n-1])
+gen ford_return = (FORD_Close - FORD_Close[_n-1])/(FORD_Close[_n-1])
+
+*market model
+reg ford_return market_return if inrange(Date, 20254, 20346)
+predict abnormal_returns2, residuals
+twoway(line abnormal_returns2 Date, xline(20349)) if inrange(Date, 20349, 20356)
+
+egen CAR_2 = total(abnormal_returns2) if inrange(Date, 20349, 20356)
+twoway(line CAR_2 Date) if inrange(Date, 20349, 20356)
+list CAR_2 if inrange(Date, 20349, 20356)
+
+sum abnormal_returns2 if inrange(Date, 20349, 20356)
+
+
+*HMC
+*data prepare
+clear
+import excel "HMC", firstrow
+
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' HMC_`i'
+	}
+
+save HMC, replace
+clear
+
+import excel "GSPC", firstrow
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' GSPC_`i'
+	}
+
+merge 1:1 Date using HMC
+drop _merge
+
+gen market_return = (GSPC_Close - GSPC_Close[_n-1])/(GSPC_Close[_n-1])
+gen hmc_return = (HMC_Close - HMC_Close[_n-1])/(HMC_Close[_n-1])
+
+*market model
+reg hmc_return market_return if inrange(Date, 20254, 20346)
+predict abnormal_returns2, residuals
+twoway(line abnormal_returns2 Date, xline(20349)) if inrange(Date, 20349, 20356)
+
+egen CAR_2 = total(abnormal_returns2) if inrange(Date, 20349, 20356)
+twoway(line CAR_2 Date) if inrange(Date, 20349, 20356)
+list CAR_2 if inrange(Date, 20349, 20356)
+
+sum abnormal_returns2 if inrange(Date, 20349, 20356)
 
 
 
+*TM
+*data prepare
+clear
+import excel "TM", firstrow
 
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' TM_`i'
+	}
 
+save TM, replace
+clear
 
+import excel "GSPC", firstrow
+drop Open High Low Volume
+foreach i in Close AdjClose{
+	rename `i' GSPC_`i'
+	}
 
+merge 1:1 Date using TM
+drop _merge
+
+gen market_return = (GSPC_Close - GSPC_Close[_n-1])/(GSPC_Close[_n-1])
+gen tm_return = (TM_Close - TM_Close[_n-1])/(TM_Close[_n-1])
+
+*market model
+reg tm_return market_return if inrange(Date, 20254, 20346)
+predict abnormal_returns2, residuals
+twoway(line abnormal_returns2 Date, xline(20349)) if inrange(Date, 20349, 20356)
+
+egen CAR_2 = total(abnormal_returns2) if inrange(Date, 20349, 20356)
+twoway(line CAR_2 Date) if inrange(Date, 20349, 20356)
+list CAR_2 if inrange(Date, 20349, 20356)
+
+sum abnormal_returns2 if inrange(Date, 20349, 20356)
