@@ -104,3 +104,14 @@ forvalues i = 55(1)65 {
 	}
 	
 ***question 5b
+forvalues i = 55(1)65 {
+	display "HPI_19"`i' " = " exp(_b[`i'.YEAR])
+	}
+	
+local cpi_cache = 0
+forvalues i = 55(1)65 {
+	local cpi = `cpi_cache' + _b[`i'.YEAR]
+	display "CPI_19"`i' " = " `cpi'
+	local cpi_cache = `cpi'
+	}
+	
