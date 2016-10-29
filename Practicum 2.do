@@ -1,3 +1,4 @@
+***question 2
 import excel waugh, firstrow
 
 ***question 2a
@@ -11,6 +12,7 @@ correlate PRICE GREEN NOSTALKS DISPERSE
 correlate PRICE GREEN NOSTALKS DISPERSE, covariance
 
 
+***question 3
 ***question 3a
 correlate PRICE GREEN NOSTALKS DISPERSE
 
@@ -27,40 +29,20 @@ reg DISPERSE PRICE
 reg PRICE GREEN NOSTALKS
 reg PRICE NOSTALKS DISPERSE
 
-***question 3d
-egen price_bar = mean(PRICE)
-egen green_bar = mean(GREEN)
-egen nostalks_bar = mean(NOSTALKS)
-egen disperse_bar = mean(DISPERSE)
+***question 3e
+correlate PRICE GREEN NOSTALKS DISPERSE, covariance
+sum PRICE
 
-foreach i in GREEN{
-	gen green_sub = GREEN - green_bar
-	}
+display "d_price_green = " 0.1375982*(3448.18)/(29.4744^2)
+display "d_price_nostalks = " -1.357256*(-93.3846)/(29.4744^2)
+display "d_price_disperse = " -0.27554*(-87.4303)/(29.4744^2)
 
-foreach i in PRICE{
-	gen price_sub = PRICE - price_bar
-	}
-
-foreach i in NOSTALKS{
-	gen nostalks_sub = NOSTALKS - nostalks_bar
-	}
-
-foreach i in DISPERSE{
-	gen disperse_sub = DISPERSE - disperse_bar
-	}
-
-gen green_cov = green_sub*price_sub
-gen nost_cov = nostalks_sub*price_sub
-gen disp_cov = disperse_sub*price_sub
-
+***question 3f
 reg PRICE GREEN NOSTALKS DISPERSE
+predict yhat
+reg PRICE GREEN NOSTALKS DISPERSE yhat
 
-scalar d_nos = _b[NOSTALKS]
-display (sum(nost_cov)/(sum(price_sub)^2))
-display d_nos
-
-
-
+***question4
 ***question 4a
 import excel "CHOW", firstrow
 
