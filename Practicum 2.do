@@ -58,18 +58,22 @@ forvalues i = 54(1)65 {
 	}
 
 reg lnrent lnmem lnmult lnaccess if inrange(YEAR, 60, 65)
-reg lnrent i.YEAR##c.(lnmem lnmult lnaccess) if inrange(YEAR, 60, 65)
+reg lnrent lnmem lnmult lnaccess i.YEAR#c.(lnmem lnmult lnaccess) /*
+	*/if inrange(YEAR, 60, 65)
 
 ***question 4b
 reg lnrent lnmem lnmult lnaccess if inrange(YEAR, 54, 59)
-reg lnrent i.YEAR##c.(lnmem lnmult lnaccess) if inrange(YEAR, 54, 59)
+reg lnrent lnmem lnmult lnaccess i.YEAR#c.(lnmem lnmult lnaccess) /*
+	*/if inrange(YEAR, 54, 59)
 
+	
 ***question 4c
 gen dum_gen1 = 1
 replace dum_gen1 = 0 if inrange(YEAR, 54, 59)
 
 reg lnrent lnmem lnmult lnaccess
-reg lnrent i.dum_gen1##c.(lnmem lnmult lnaccess) if inrange(YEAR, 54, 65)
+reg lnrent lnmem lnmult lnaccess i.dum_gen1#c.(lnmem lnmult lnaccess) /*
+	*/if inrange(YEAR, 54, 65)
 
 
 
